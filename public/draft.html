@@ -1,0 +1,71 @@
+И так представим что у нас есть техническое задание: 
+Реализовать форму отправляющую на сервер что-то такое:
+<source lang="javascript">
+const order = {
+  name: "Vasya",
+  surname: "Pupkin",
+  basket: {
+    budget: 100,
+    purchases: [
+      {
+        name: "apple",
+        cost: 5
+      },
+      {
+        name: "banana",
+        cost: 15
+      }
+    ]
+  }
+};
+</source>
+
+При этом требования к полям такие (сейчас это можно пропустить и вернуться позже):
+
+<ul>
+  <li>
+    order.name, order.surname
+    <ul>
+      <li>поле <b>name</b> не должно быть пустым. ошибка - (name is required)</li>
+      <li>поле должно состоять только из буков английского алфавита (should be only letters)</li>
+      <li>длинна не меньше 2 букв (to short name/surname)</li>
+      <li>длинна не больше 20 букв (too long name/surname)</li>
+    </ul>
+  </li>
+  <li>
+    basket.budget
+    <ul>
+      <li>поле не должно быть пустым (budget is required)</li>
+      <li>должно быть числом (budget should be number)</li>
+      <li>должен быть больше ноля (budget should be more then zero)</li>
+      <li>не может иметь более 2-х символов после точки (budget can have only 2 signs after dot)</li>
+      <li>не может быть больше 1 000 000 (max budget is 1 000 000)</li>
+    </ul>
+  </li>
+  <li>
+    basket.purchases
+    <ul>
+      <li>должен быть хотя-бы один элемент (should be at least one purchase)</li>
+    </ul>
+  </li>
+  <li>
+    purchase.name
+    <ul>
+      <li>не должно быть пустым. ошибка - (name is required)</li>
+      <li>поле должно состоять только из буков английского алфавита (should be only letters)</li>
+      <li>длинна не меньше 2 букв (to short name)</li>
+      <li>длинна не больше 10 букв (too long name)</li>
+      <li>имя должно быть уникальным в пределах списка (name should be unique)</li>
+    </ul>
+  </li>
+  <li>
+    purchase.cost
+    <ul>
+      <li>поле не должно быть пустым (cost is required)</li>
+      <li>должно быть числом (cost should be number)</li>
+      <li>должен быть больше или равно нолю (cost cannot be less then zero)</li>
+      <li>не может иметь более 2-х символов после точки (cost can have only 2 signs after dot)</li>
+      <li>не может быть больше 1 000 (max cost is 1 000)</li>
+    </ul>
+  </li>
+</ul>
