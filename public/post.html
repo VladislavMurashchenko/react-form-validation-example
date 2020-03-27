@@ -1,0 +1,237 @@
+Здавстрвуйте, в этом туториале мы рассмотрим как работать с формами в React, основное внимание уделив валидации.
+Мы будем начинать принципу KISS делая самую "тупую" реализацию подходящую под наши требования. а затем постепенно прокачаем наш код делая его более декларативным и соответсвующим принципу DRY. Разработку в таком духе я называю KISS first development. 
+Также мы будем использовать всякие модные штуки из функционального программирования такие как чистые функции, функции высшего порядка, каррирование и т.д.
+
+И так представим что у нас есть техническое задание: 
+Реализовать форму отправляющую на сервер что-то такое:
+<source lang="javascript">
+const order = {
+  name: "Vasya",
+  surname: "Pupkin",
+  basket: {
+    budget: 100,
+    purchases: [
+      {
+        name: "apple",
+        cost: 5
+      },
+      {
+        name: "banana",
+        cost: 15
+      }
+    ]
+  }
+};
+</source>
+
+При этом требования к полям такие (сейчас это можно пропустить и вернуться позже):
+
+<ul>
+  <li>
+    order.name, order.surname
+    <ul>
+      <li>поле <b>name</b> не должно быть пустым. ошибка - (name is required)</li>
+      <li>поле должно состоять только из буков английского алфавита (should be only letters)</li>
+      <li>длинна не меньше 2 букв (to short name/surname)</li>
+      <li>длинна не больше 20 букв (too long name/surname)</li>
+    </ul>
+  </li>
+  <li>
+    basket.budget
+    <ul>
+      <li>поле не должно быть пустым (budget is required)</li>
+      <li>должно быть числом (budget should be number)</li>
+      <li>должен быть больше ноля (budget should be more then zero)</li>
+      <li>не может иметь более 2-х символов после точки (budget can have only 2 signs after dot)</li>
+      <li>не может быть больше 1 000 000 (max budget is 1 000 000)</li>
+    </ul>
+  </li>
+  <li>
+    basket.purchases
+    <ul>
+      <li>должен быть хотя-бы один элемент (should be at least one purchase)</li>
+    </ul>
+  </li>
+  <li>
+    purchase.name
+    <ul>
+      <li>не должно быть пустым. ошибка - (name is required)</li>
+      <li>поле должно состоять только из буков английского алфавита (should be only letters)</li>
+      <li>длинна не меньше 2 букв (to short name)</li>
+      <li>длинна не больше 10 букв (too long name)</li>
+      <li>имя должно быть уникальным в пределах списка (name should be unique)</li>
+    </ul>
+  </li>
+  <li>
+    purchase.cost
+    <ul>
+      <li>поле не должно быть пустым (cost is required)</li>
+      <li>должно быть числом (cost should be number)</li>
+      <li>должен быть больше или равно нолю (cost cannot be less then zero)</li>
+      <li>не может иметь более 2-х символов после точки (cost can have only 2 signs after dot)</li>
+      <li>не может быть больше 1 000 (max cost is 1 000)</li>
+    </ul>
+  </li>
+</ul>
+
+Начнем разработку с самого верхнего уровня упуская basket.
+Самый адекватный KISS-ный код, это самая простая реализация в лоб. 
+Вот она:
+<source lang="javascript">
+  const defaultState = {
+    name: "Vasya",
+    surname: "Pupkin"
+  };
+  
+  const defaultErrors = {
+    name: "",
+    surname: ""
+  };
+  
+  const Form = () => {
+    const [state, setState] = useState(defaultState);
+    const [errors, setErrors] = useState(defaultErrors);
+  
+    const validate = () => {
+      const errors = {};
+      const isValid = false;
+      // some imperative validation code
+      setErrors(errors);
+      return isValid;
+    };
+  
+    const handleSubmit = () => {
+      if (validate()) {
+        // post data to server
+      }
+    };
+  
+    return (
+      <form onSubmit={handleSubmit}>
+        <label>
+          <input
+            value={state.name}
+            onChange={e => setState({ ...state, name: e.target.value })}
+          />
+        </label>
+        <p>{errors.name}</p>
+        <label>
+          <input
+            value={state.surname}
+            onChange={e => setState({ ...state, surname: e.target.value })}
+          />
+        </label>
+        <p>{errors.surname}</p>
+        <button>Submit</button>
+      </form>
+    );
+  };
+</source>
+
+И так мы получили простой, рабочий, но пока не идеальный код.
+Обычно статьи по разработке форм в react на чем-то таком и заканчиваются. Но мы пойдем дальше, 
+давайте сделаем этот код более DRY. 
+У нас есть ярко выраженный дублирующийся код.
+<source lang="xml">
+  <label>
+    <input
+      value={state.name}
+      onChange={e => setState({ ...state, name: e.target.value })}
+    />
+  </label>
+  <p>{errors.name}</p>
+  <label>
+    <input
+      value={state.surname}
+      onChange={e => setState({ ...state, surname: e.target.value })}
+    />
+  </label>
+  <p>{errors.surname}</p>
+</source>
+В данном коде дублируется композиция из 3-х элементов и 
+onChange который отличается только тем в какое конкретно поле состояния он пишет значение.
+Вынесем композицию в отдельный компонент
+<source lang="javascript">
+  const InputField = (value, onChange, error) => {
+    return (
+      <div>
+        <label>
+          <input
+            value={state.name}
+            onChange={e => onChange(e.target.value)}}
+          />
+        </label>
+        <p>{error}</p>
+      </div>
+    );
+  };
+</source>
+Обратите внимание как мы вынесли логику получиня значения из event внутрь компонента
+<source lang="javascript">
+  <input
+    value={state.name}
+    onChange={e => onChange(e.target.value)}}
+  />
+</source>
+Таким образом соблюдается однородность типа при вводе и выводе в компоненте и скривается 
+истенная природа происходящего. Такой подход дает нам дополнительную гибкость так как мы можем
+работать с любыми источниками ввода-вывода не задумываясь о его реализации и соответсвенно 
+обрабатывать все осточники ввода-вывода одинаково.
+Теперь применим наш компонент в нашем компоненте Form, и получим
+<source lang="javascript">
+  <form onSubmit={handleSubmit}>
+    <Input
+      value={state.name}
+      onChange={name => setState({ ...state, name })}
+      error={errors.name}
+    />
+    <Input
+      value={state.surname}
+      onChange={surname => setState({ ...state, surname })}
+      error={errors.surname}
+    />
+    <button>Submit</button>
+  </form>
+</source>
+Стало лучше,
+Теперь видно, что onChange в обеих Input-ах по-сути одинаковая, 
+за исключением имени свойства состояния в которое нужно записывать значение.
+То есть нам нужна какая-то функция которая будет принимать имя ключа, например "name"
+и возврашать готовый handler.
+Если говорить упрощенно, то каррированая функция - это такая
+функция которая выполнится только при получении всех аргументов.  
+Что ж лучше на примере, создадим каррированную функцию для нашего onChange
+<source lang="javascript">
+  const createHandler = setState => fieldName => fieldValue => {
+    setState({
+      [fieldName]: fieldValue
+    });
+  };
+</source>
+Как видите функция будет получать аргументы постепенно каждый раз 
+сохраняя в замыкании предыдущий. За первым вызовом она приймет она приймет setState, затем
+fieldName и сразу вернет handler который мы уже можем передать в onChange.
+Давайте используем ее в нашем Form.
+<source lang="javascript">
+  const Form = () => {
+    const [state, setState] = useState(defaultState);
+    // ... some code
+    const handleChange = createHandler(setState);
+
+    return (
+      <form onSubmit={handleSubmit}>
+        <Input
+          value={state.name}
+          onChange={handleChange("name")}
+          error={errors.name}
+        />
+        <Input
+          value={state.surname}
+          onChange={handleChange("surname")}
+          error={errors.surname}
+        />
+        <button>Submit</button>
+      </form>
+    );
+  };
+</source>
