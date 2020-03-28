@@ -8,8 +8,7 @@
 штуки из функционального программирования 
 такие как чистые функции, функции высшего порядка, каррирование и т.д.
 Но для успешного прохождения данного туториала вам ничего этого знать не нужно, я буду
-объяснять по-ходу дела. Однако я пологаю что вы владеете основными понятиями React и умеете
-<a href="https://ru.reactjs.org/docs/thinking-in-react.html">мыслить на React</a>. 
+объяснять по-ходу дела. Однако я пологаю что вы владеете основными понятиями React и умеете <a href="https://ru.reactjs.org/docs/thinking-in-react.html">мыслить на React</a>. 
 
 <h2>К делу!</h2>
 
@@ -183,7 +182,7 @@ const logInRequest = {
 </source>
 Как видите функция будет получать аргументы постепенно каждый раз 
 сохраняя в замыкании предыдущий.
-Давайте используем ее в наш <var>Form</var> и посмотри на весь код целяком.
+Давайте используем ее в нашем <var>Form</var> и посмотри на весь код.
 <source lang="javascript">
   const defaultState = {
     nickname: '',
@@ -196,7 +195,7 @@ const logInRequest = {
   
     const handleSubmit = e => {
       e.preventDefault();
-      // TODO: post your data to api
+      // TODO: implement api.logIn(); 
     };
   
     const handleChange = fieldName => fieldValue => {
@@ -227,6 +226,7 @@ const logInRequest = {
     );
   };
   
+  // InputField.js
   const InputField = ({ label, value, onChange }) => (
     <label>
       {label}
@@ -234,153 +234,129 @@ const logInRequest = {
     </label>
   );
 </source>
+Данные код является короткой, лаконичной и деаларативной реализацией поставленной задачи. 
+Способов его дальнейшего улучшения без trade-of-ов нет.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-При этом требования к полям такие (сейчас это можно пропустить и вернуться позже):
-
-<ul>
-  <li>
-    nickname
-    <ul>
-      <li>не должно быть пустым.</li>
-      <li>поле должно состоять только из буков английского алфавита</li>
-      <li>длинна не меньше 2 букв</li>
-      <li>длинна не больше 15 букв</li>
-    </ul>
-  </li>
-  <li>
-    email
-    <ul>
-      <li>не должно быть пустым.</li>
-      <li>поле должно быть корректным имейлом</li>
-    </ul>
-  </li>
-  <li>
-    password
-    <ul>
-      <li>не должно быть пустым.</li>
-      <li>должня быть минимум 1 заглавная буква</li>
-      <li>должна быть минимум 1 строчная буква</li>
-      <li>минимум 1 число</li>
-      <li>минимум 1 символ</li>
-      <li>не меньше 8 символо в сумме</li>
-    </ul>
-  </li>
-</ul>
-
+<h3>Что еще можно сделать?</h3>
+Если у вас много форм в проекте, то вы можете вынести рассчет handleChange в отдельный хук <code>useFieldChange</code>
+Так как это будет чистая функция (имеется ввиду при первом вызове с setState) это не обязательно должен быть хук. 
+Но хук смотрится концептуально более правильным и природным решением для React чем утилита.
 <source lang="javascript">
-  const defaultState = {
-    name: "",
-    email: "",
-    password: "",
+  // hooks/useFieldChange.js
+  const useFieldChange = setState => fieldName => fieldValue => {
+    setState({
+      [fieldName]: fieldValue
+    });
   };
-  
-  const defaultErrors = {
-    name: "",
-    email: "",
-    password: "",
-  };
-  
-  const Form = () => {
-    const [state, setState] = useState(defaultState);
-    const [errors, setErrors] = useState(defaultErrors);
-  
-    const validate = () => {
-      const errors = {};
-      const isValid = false;
-      // TODO: implement validation here
-      setErrors(errors);
-      return isValid;
-    };
-  
-    const handleSubmit = () => {
-      if (validate()) {
-        // TODO: post data to server
-      }
-    };
-  
-    return (
-      <form onSubmit={handleSubmit}>
-        <label>
-          name
-          <input
-            value={state.name}
-            onChange={e => setState({ ...state, name: e.target.value })}
-          />
-        </label>
-        {// Avoid inline styles in realworld code}
-        <p style={{ color: "red" }}>{errors.name}</p> 
-        <label>
-          email
-          <input
-            type="email"
-            value={state.email}
-            onChange={e => setState({ ...state, email: e.target.value })}
-          />
-        </label>
-        <p style={{ color: "red" }}>{errors.email}</p>
-        <label>
-          password
-          <input
-            type="email"
-            value={state.password}
-            onChange={e => setState({ ...state, password: e.target.value })}
-          />
-        </label>
-        <p style={{ color: "red" }}>{errors.password}</p>
-        <button>Submit</button>
-      </form>
-    );
+  // Form.js
+  const handleChange = useFieldChange(setState);
+</source>
+Теперь можно добавить поддержку callback на месте fieldValue, что-бы полностью
+повторить поведение обычного setState из React
+<source lang="javascript">
+  const isFunc = (val) => typeof val === "function";
+
+  const useFieldChange = setState => fieldName => fieldValue => {
+    setState((state) => {
+      [fieldName]: isFunc(fieldValue) ? fieldValue(state) : fieldValue,
+    });
   };
 </source>
+Но все это вам делать не нужно в нашем случае! Потому, что это противоречит принципу YAGNI,
+следуя которому мы не должны делать то, что нам не нужно для решения конкретной задачи. 
+Реальной пользы от таких телодвижений мало, ведь мы сократим код нашего компонента только 
+на 3 строчки, но введем дополнительную абстракцию, которая пока не нужна.
+<h2>О нет, пожалуйста не делайте так!</h2>
+Посмотрите на этот код
+<source lang="javascript">  
+  const Form = () => (
+    <form onSubmit={handleSubmit}>
+      <InputField
+        label="Enter your nickname"
+        value={state.nickname}
+        onChange={handleChange('nickname')}
+      />
+      <InputField
+        label="Enter your email"
+        value={state.email}
+        onChange={handleChange('email')}
+      />
+      <InputField
+        label="Enter your password"
+        value={state.password}
+        onChange={handleChange('password')}
+      />
+      <button>Submit</button>
+    </form>
+  );
+</source>
+Некоторым разработчикам может показаться, что здесь у нас дублирование кода,
+ведь мы же вызываем один и тот же компонент InputField, 
+передавая туда одни и те же параметры label, value и onChange.
+И они начинают за-DRY-ивать собственный код что-бы избежать якобы дублирования.
+Часто это делают примерно так:
+<source lang="javascript">  
+  const fields = [
+    {
+      name: 'nickname',
+      label: 'Enter your nickname',
+    },
+    {
+      name: 'email',
+      label: 'Enter your email',
+    },
+    {
+      name: 'password',
+      label: 'Enter your password',
+    },
+  ];
+
+  const Form = () => (
+    <form onSubmit={handleSubmit}>
+      {fields.map({ name, label } => (
+        <InputField
+          label={label}
+          value={state[name]}
+          onChange={handleChange(name)}
+        />
+      )}
+      <button>Submit</button>
+    </form>
+  );
+</source>
+В итоге 15 строчек кода получаем 14. Браво! Вот это я понимаю DRY.
+Если у нас здесь будет 100 таких input-ов, то мы получим 500 и 402 строчки соответсвенно.
+Но как результат мы получили более сложный код нарушив принцип KISS. 
+Ведь теперь он как минимум состоит из 2-х абстракций и 
+при чтении этого кода нам прийдется постоянно прыгать между ними.
+
+Но самая большая проблема этого кода - это его поддержка и расширение.
+Представте что с ним случится, если:
+<ul>
+  <li>Добавится еще несколько типов полей с разными возможными свойствами</li>
+  <li>поля могут рендериться или не рендериться на основе ввода других полей</li>
+  <li>Некоторые поля требуют какой-то дополнительной обработки при изменении</li>
+  <li>Значения в селектах зависит от прерыдущих селектов</li>
+  <li>можно продолжать долго...</li>
+</ul>
+Для реализации этого всегда прийдется хранить какие-то функции в вашем конфиге, а код который
+рендерит конфиг постепенно превратится в Франкинштейна, принемая кучу разных пропсов и
+закидывая их по разным компонентам.
+
+Код же который был написан до этого, основанный на композиции компонентов, будет спокойно
+расширяться, меняться как угодно при этом усложнясь не сильно, а все <b>благодаря отсутсвию промежуточной 
+  абстракции</b> - кода который рендерит объекты через цикл. 
+
+<h2>Выводы</h2>
+Формы в React это просто, проблемы с ними разработчики создают себе сами.
+Для удобной работы с вашими компонентами держите ввод и вывод aka value и onChange одного типа,
+это позволит вам использовать функцию handleChange описанную выше и получать чуть более многословный
+но мощный аналог v-model из Vue для комфортной работы с ними.
+При написании кода следуйте принципов KISS и YAGNI в первую очередь, а затем DRY, но осторожно, 
+что-бы не создать случайно плохую абстракцию. 
+И на последок лайфхак что-бы понять, что абстракция хорошая - у нее должно быть имя которое
+полностю соответсвует ее предназначению. Если хорошее имя придумать сложно, то скорее всего вы выбрали
+не правильную абстракцию, а возможно она вам вообще не нужна исходя из YAGNI.
+
+<h3>P.S</h3>
+Спасибо, всем кто дочитал до конца!
